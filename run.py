@@ -27,7 +27,7 @@ def main(args):
     predictor = DefaultPredictor(cfg)
 
     for image in images:
-        outputs = predictor(im)
+        outputs = predictor(image)
         print(outputs["instances"].pred_classes)
         print(outputs["instances"].pred_boxes)
         breakpoint()
