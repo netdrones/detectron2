@@ -11,6 +11,28 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 
+LOWER_RED = np.array([0,70,70])
+UPPER_RED = np.array([20,200,150])
+
+def rust_detect(path):
+
+	img = cv2.imread(path)
+	img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+	# Range for lower red
+	lower_red = np.array([0,70,70])
+	upper_red = np.array([20,200,150])
+	mask_lower = cv2.inRange(img_hsv, lower_red, upper_red)
+
+	# Range for upper red
+	lower_red = np.array([170,70,70])
+	upper_red = np.array([180,200,150])
+	mask_upper = cv2.inRange(img_hsv, lower_red, upper_red)
+
+    mask = mask_lower + mask_upper
+
+    return cv2.bitwise_and(img, img, mask=mask)
+
 def main(args):
 
 	# Get images
@@ -28,9 +50,6 @@ def main(args):
 
     for image in images:
         outputs = predictor(image)
-        print(outputs["instances"].pred_classes)
-        print(outputs["instances"].pred_boxes)
-        breakpoint()
 
 if __name__ == '__main__':
 
