@@ -1,5 +1,6 @@
 import os
 import cv2
+import shutil
 import argparse
 import detectron2
 import numpy as np
@@ -14,20 +15,19 @@ from detectron2.data import MetadataCatalog, DatasetCatalog
 LOWER_RED = np.array([0,70,70])
 UPPER_RED = np.array([20,200,150])
 
-def rust_detect(path):
+def rust_detect(img):
 
-	img = cv2.imread(path)
-	img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-	# Range for lower red
-	lower_red = np.array([0,70,70])
-	upper_red = np.array([20,200,150])
-	mask_lower = cv2.inRange(img_hsv, lower_red, upper_red)
+    # Range for lower red
+    lower_red = np.array([0,70,70])
+    upper_red = np.array([20,200,150])
+    mask_lower = cv2.inRange(img_hsv, lower_red, upper_red)
 
 	# Range for upper red
-	lower_red = np.array([170,70,70])
-	upper_red = np.array([180,200,150])
-	mask_upper = cv2.inRange(img_hsv, lower_red, upper_red)
+    lower_red = np.array([170,70,70])
+    upper_red = np.array([180,200,150])
+    mask_upper = cv2.inRange(img_hsv, lower_red, upper_red)
 
     mask = mask_lower + mask_upper
 
@@ -39,7 +39,8 @@ def main(args):
     images = []
     img_paths = os.listdir(args.img_dir)
     for img in img_paths:
-        images.append(cv2.imread(os.path.join(args.img_dir, img)))
+        img_path = os.path.join(args.img_dir, img)
+        images.append(cv2.imread(img_path))
 
 	# Get configs
     cfg = get_cfg()
@@ -48,13 +49,34 @@ def main(args):
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
     predictor = DefaultPredictor(cfg)
 
-    for image in images:
+    # Output directory
+    out_dir = args.out_dir
+    sem_dir = os.path.join(args.out_dir, 'semantic')
+    rust_dir = os.path.join(args.out_dir, 'rust')
+    dir_list = [out_dir, sem_dir, rust_dir]
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    for path in dir_list:
+        os.mkdir(path)
+
+    # Predictions
+    for i, image in enumerate(images):
+
+        # Semantic segmentation
         outputs = predictor(image)
+        v = Visualizer(image[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
+        out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+        cv2.imwrite(os.path.join(sem_dir, f'{i}.jpg'), out.get_image()[:, :, ::-1])
+
+        # Rust
+        rust = rust_detect(image)
+        cv2.imwrite(os.path.join(rust_dir, f'{i}.jpg'), rust)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Headless instance segmentation')
     parser.add_argument('--img_dir', help='path to images')
+    parser.add_argument('--out_dir', help='path to output', default='results')
     args = parser.parse_args()
 
     main(args)

@@ -29,3 +29,10 @@ opencv:
 	pip install --upgrade pip
 	if [ ! -d bin/opencv ]; then gsutil -m cp -r gs://netdron.es/opencv bin; fi
 	pip install bin/opencv/*.whl
+
+download-test:
+	if [ ! -d ./data ]; then \
+	  	mkdir data
+		gsutil -m cp -r gs://data.netdron.es/facade \
+		gs://data.netdron.es/stone-bench \
+		data; fi
