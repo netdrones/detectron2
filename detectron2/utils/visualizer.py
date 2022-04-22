@@ -24,7 +24,7 @@ from detectron2.utils.file_io import PathManager
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from PIL import Image
 
-from .colormap import random_color
+from .colormap import random_color, colormap
 
 logger = logging.getLogger(__name__)
 
@@ -399,8 +399,10 @@ class Visualizer:
         Returns:
             output (VisImage): image object with visualizations.
         """
-        boxes = predictions.pred_boxes if predictions.has("pred_boxes") else None
-        scores = predictions.scores if predictions.has("scores") else None
+        # boxes = predictions.pred_boxes if predictions.has("pred_boxes") else None
+        # scores = predictions.scores if predictions.has("scores") else None
+        boxes = None
+        scores = None
         classes = predictions.pred_classes.tolist() if predictions.has("pred_classes") else None
         labels = _create_text_labels(classes, scores, self.metadata.get("thing_classes", None))
         keypoints = predictions.pred_keypoints if predictions.has("pred_keypoints") else None
@@ -693,7 +695,8 @@ class Visualizer:
             keypoints = keypoints[sorted_idxs] if keypoints is not None else None
 
         for i in range(num_instances):
-            color = assigned_colors[i]
+            # color = assigned_colors[i]
+            color = np.array([1, 1, 1])
             if boxes is not None:
                 self.draw_box(boxes[i], edge_color=color)
 

@@ -38,7 +38,7 @@ def main(args):
 	# Get images
     images = []
     img_paths = os.listdir(args.img_dir)
-    for img in img_paths:
+    for img in sorted(img_paths):
         img_path = os.path.join(args.img_dir, img)
         images.append(cv2.imread(img_path))
 
